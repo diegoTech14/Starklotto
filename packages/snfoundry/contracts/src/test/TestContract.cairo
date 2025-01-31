@@ -1,61 +1,74 @@
-use contracts::YourContract::{IYourContractDispatcher, IYourContractDispatcherTrait};
+use starknet::{ContractAddress, contract_address_const, get_contract_address};
+use contracts::DistributePrize::{IDistributPrizeDispatcher, IDistributPrizeDispatcherTrait};
 use openzeppelin_token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
-use openzeppelin_utils::serde::SerializedAppend;
-use snforge_std::{CheatSpan, ContractClassTrait, DeclareResultTrait, cheat_caller_address, declare};
-use starknet::{ContractAddress, contract_address_const};
 
-// Real contract address deployed on Sepolia
-fn OWNER() -> ContractAddress {
-    contract_address_const::<0x02dA5254690b46B9C4059C25366D1778839BE63C142d899F0306fd5c312A5918>()
+use snforge_std::{
+    declare, CheatSpan, cheat_caller_address, stop_cheat_caller_address, ContractClassTrait,
+    DeclareResultTrait, spy_events, EventSpyAssertionsTrait, get_class_hash,
+};
+
+fn USER() -> ContractAddress {
+    contract_address_const::<0x01d6abf4f5963082fc6c44d858ac2e89434406ed682fb63155d146c5d69c22d6>()
+}
+
+fn WINNER() -> ContractAddress {
+    contract_address_const::<0x01f0d3e6e3b1116fbf69dd670e5c079c8c3b6e5a789f00270ba049b6c22a0d3b>()
 }
 
 const ETH_CONTRACT_ADDRESS: felt252 =
     0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7;
 
-fn deploy_contract(name: ByteArray) -> ContractAddress {
-    let contract_class = declare(name).unwrap().contract_class();
+fn __setup__() -> ContractAddress {
+    let class_hash = declare("DistributPrize").unwrap().contract_class();
+
     let mut calldata = array![];
-    calldata.append_serde(OWNER());
-    let (contract_address, _) = contract_class.deploy(@calldata).unwrap();
+
+    let (contract_address, _) = class_hash.deploy(@calldata).unwrap();
+
     contract_address
 }
 
 #[test]
-fn test_set_greetings() {
-    let contract_address = deploy_contract("YourContract");
+fn test_set_pool() {
+    let contract_address = __setup__();
+    let dispatcher = IDistributPrizeDispatcher { contract_address };
 
-    let dispatcher = IYourContractDispatcher { contract_address };
+    dispatcher.set_pool(50);
 
-    let current_greeting = dispatcher.greeting();
-    let expected_greeting: ByteArray = "Building Unstoppable Apps!!!";
-    assert(current_greeting == expected_greeting, 'Should have the right message');
+    let pool_value = dispatcher.total_pool();
 
-    let new_greeting: ByteArray = "Learn Scaffold-Stark 2! :)";
-    dispatcher.set_greeting(new_greeting.clone(), 0); // we transfer 0 eth
-    assert(dispatcher.greeting() == new_greeting, 'Should allow set new message');
+    assert!(pool_value == 50, "Invalid pool value");
 }
 
 #[test]
 #[fork("SEPOLIA_LATEST")]
-fn test_transfer() {
-    let user = OWNER();
+fn test_distribute_prize() {
+    let contract_address = __setup__();
+    let user = USER();
     let eth_contract_address = contract_address_const::<ETH_CONTRACT_ADDRESS>();
-    let your_contract_address = deploy_contract("YourContract");
+    let dispatcher = IDistributPrizeDispatcher { contract_address };
 
-    let your_contract_dispatcher = IYourContractDispatcher {
-        contract_address: your_contract_address,
-    };
+    dispatcher.set_pool(100);
+
+    let pool = dispatcher.total_pool();
+
     let erc20_dispatcher = IERC20Dispatcher { contract_address: eth_contract_address };
-    let amount_to_transfer = 500;
-    cheat_caller_address(eth_contract_address, user, CheatSpan::TargetCalls(1));
-    erc20_dispatcher.approve(your_contract_address, amount_to_transfer);
-    let approved_amount = erc20_dispatcher.allowance(user, your_contract_address);
-    assert(approved_amount == amount_to_transfer, 'Not the right amount approved');
+    cheat_caller_address(eth_contract_address, user, CheatSpan::TargetCalls(2));
 
-    let new_greeting: ByteArray = "Learn Scaffold-Stark 2! :)";
+    let balance_of_winner_before_distribution = erc20_dispatcher.balance_of(WINNER());
 
-    cheat_caller_address(your_contract_address, user, CheatSpan::TargetCalls(1));
-    your_contract_dispatcher.set_greeting(new_greeting.clone(), 500); // we transfer 0 eth
-    assert(your_contract_dispatcher.greeting() == new_greeting, 'Should allow set new message');
+    erc20_dispatcher.transfer(contract_address, 1000);
+    erc20_dispatcher.approve(contract_address, pool);
+    dispatcher.distribute_prize(WINNER());
+
+    let balance_of_winner_after_distribution = erc20_dispatcher.balance_of(WINNER());
+
+    assert!(
+        balance_of_winner_after_distribution == balance_of_winner_before_distribution + pool,
+        "Invalid winner balance",
+    );
+
+    let pool_value = dispatcher.total_pool();
+
+    assert!(pool_value == 0, "Invalid pool value");
 }
-
