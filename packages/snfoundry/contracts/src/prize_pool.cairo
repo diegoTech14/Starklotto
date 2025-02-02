@@ -44,6 +44,17 @@ mod PrizePool {
         ReservesWithdrawn: ReservesWithdrawn,
     }
 
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    pub enum Event {
+        prizePool:PrizePoolUpdated
+    }
+
+    #[derive(Drop, starknet::Event)]
+    pub struct PrizePoolUpdated {
+        pub prize: u32
+    }
+
     #[derive(Drop, starknet::Event)]
     struct FeeUpdated {
         old_fee: u256,
