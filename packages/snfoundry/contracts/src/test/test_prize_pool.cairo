@@ -140,4 +140,20 @@ mod tests {
         let pool_after_second_add = prize_pool.get_Pool();
         assert_eq!(pool_after_second_add, 750_u256);
     }
+
+    #[test_case]
+    fn test_get_pool_total() {
+        let contract_class: ContractClass = declare("PrizePool");
+        let contract: PreparedContract = contract_class.deploy();
+
+        let admin: ContractAddress = ContractAddress::from_felt(0x123456);
+        let fee_setter: ContractAddress = ContractAddress::from_felt(0x789abc);
+
+        let prize_pool: ContractInvoker<PrizePool> = contract.into();
+        prize_pool.constructor(admin, fee_setter);
+
+        // Without adding any tickets, the prize pool total should be zero.
+        let pool_total = prize_pool.getPoolTotal();
+        assert_eq!(pool_total, 0_u256);
+    }
 }
