@@ -8,6 +8,8 @@ trait IPrizePool<TContractState> {
     fn withdraw_reserves(ref self: TContractState, amount: u256, recipient: ContractAddress);
     fn get_platform_fee(ref self: TContractState) -> u256;
     fn get_platform_reserves(ref self: TContractState) -> u256;
+    fn addToPool(ref self: ContractState, amount: u256);
+    fn getPool(ref self: ContractState) -> u256;
 }
 #[starknet::contract]
 mod PrizePool {
