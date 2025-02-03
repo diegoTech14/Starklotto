@@ -124,6 +124,15 @@ mod PrizePool {
         fn get_platform_reserves(ref self: ContractState) -> u256 {
             self.platform_reserves.read()
         }
+
+        fn addToPool(ref self: ContractState, amount: u256){
+            
+            assert(!amount.is_zero(), "Ticket amount must be greater than zero");
+
+            let current_total = self.totalPool.read();
+            let new_total = current_total + amount;
+            self.totalPool.write(new_total);
+        }
     }
 
 
