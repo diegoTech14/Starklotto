@@ -71,6 +71,10 @@ mod PrizePool {
         
         // Initial platform fee: 10% 
         self.platform_fee_percentage.write(10_u256);
+        // Initialize platform reserves (if not already defaulting to 0)
+        self.platform_reserves.write(0_u256);
+        // --- Initialize the total prize pool to zero ---
+        self.totalPool.write(0_u256);
     }
 
     #[abi(embed_v0)]
