@@ -31,6 +31,7 @@ mod PrizePool {
         erc20: ERC20Component::Storage,
         platform_fee_percentage: u256,
         platform_reserves: u256,
+        totalPool: u256,
     }
 
     #[event]
