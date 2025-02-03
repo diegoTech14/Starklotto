@@ -133,6 +133,10 @@ mod PrizePool {
             let new_total = current_total + amount;
             self.totalPool.write(new_total);
         }
+
+        fn getPoolTotal(ref self: ContractState) -> u256 {
+            self.totalPool.read();
+        }
     }
 
 
