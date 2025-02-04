@@ -8,6 +8,8 @@ trait IPrizePool<TContractState> {
     fn withdraw_reserves(ref self: TContractState, amount: u256, recipient: ContractAddress);
     fn get_platform_fee(ref self: TContractState) -> u256;
     fn get_platform_reserves(ref self: TContractState) -> u256;
+    fn add_Pool(ref self: ContractState, amount: u256);
+    fn get_Pool(ref self: ContractState) -> u256;
 }
 #[starknet::contract]
 mod PrizePool {
@@ -31,6 +33,7 @@ mod PrizePool {
         erc20: ERC20Component::Storage,
         platform_fee_percentage: u256,
         platform_reserves: u256,
+        totalPool: u256,
     }
 
     #[event]
@@ -68,6 +71,10 @@ mod PrizePool {
         
         // Initial platform fee: 10% 
         self.platform_fee_percentage.write(10_u256);
+        // Initialize platform reserves (if not already defaulting to 0)
+        self.platform_reserves.write(0_u256);
+        // --- Initialize the total prize pool to zero ---
+        self.totalPool.write(0_u256);
     }
 
     #[abi(embed_v0)]
@@ -116,6 +123,19 @@ mod PrizePool {
 
         fn get_platform_reserves(ref self: ContractState) -> u256 {
             self.platform_reserves.read()
+        }
+
+        fn add_Pool(ref self: ContractState, amount: u256){
+            
+            assert(!amount.is_zero(), "Ticket amount must be greater than zero");
+
+            let current_total = self.totalPool.read();
+            let new_total = current_total + amount;
+            self.totalPool.write(new_total);
+        }
+
+        fn get_Pool(ref self: ContractState) -> u256 {
+            self.totalPool.read();
         }
     }
 

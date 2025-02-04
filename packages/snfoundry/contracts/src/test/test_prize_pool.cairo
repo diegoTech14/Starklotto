@@ -110,4 +110,50 @@ mod tests {
         assert_eq!(initial_fee, 10_u256);
         assert_eq!(initial_reserves, 0_u256);
     }
+
+    #[test_case]
+    fn test_add_to_pool() {
+        let contract_class: ContractClass = declare("PrizePool");
+        let contract: PreparedContract = contract_class.deploy();
+
+        let admin: ContractAddress = ContractAddress::from_felt(0x123456);
+        let fee_setter: ContractAddress = ContractAddress::from_felt(0x789abc);
+
+        let prize_pool: ContractInvoker<PrizePool> = contract.into();
+        prize_pool.constructor(admin, fee_setter);
+
+        // Initially, the total prize pool should be 0.
+        let initial_pool = prize_pool.get_Pool();
+        assert_eq!(initial_pool, 0_u256);
+
+        // Add a ticket of 500 tokens.
+        prize_pool.add_Pool(500_u256);
+
+        // Verify the pool total has increased to 500.
+        let pool_after_first_add = prize_pool.get_Pool();
+        assert_eq!(pool_after_first_add, 500_u256);
+
+        // Add another ticket of 250 tokens.
+        prize_pool.add_Pool(250_u256);
+
+        // Verify the total accumulates to 750.
+        let pool_after_second_add = prize_pool.get_Pool();
+        assert_eq!(pool_after_second_add, 750_u256);
+    }
+
+    #[test_case]
+    fn test_get_pool_total() {
+        let contract_class: ContractClass = declare("PrizePool");
+        let contract: PreparedContract = contract_class.deploy();
+
+        let admin: ContractAddress = ContractAddress::from_felt(0x123456);
+        let fee_setter: ContractAddress = ContractAddress::from_felt(0x789abc);
+
+        let prize_pool: ContractInvoker<PrizePool> = contract.into();
+        prize_pool.constructor(admin, fee_setter);
+
+        // Without adding any tickets, the prize pool total should be zero.
+        let pool_total = prize_pool.getPoolTotal();
+        assert_eq!(pool_total, 0_u256);
+    }
 }
