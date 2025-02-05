@@ -93,6 +93,23 @@ mod tests {
     }
 
     #[test_case]
+    fn test_update_prize_pool(){
+        let contract_class: ContractClass = declare("PrizePool");
+        let contract: PreparedContract = contract_class.deploy();
+
+        let admin: ContractAddress = ContractAddress::from_felt(0x123456);
+        let fee_setter: ContractAddress = ContractAddress::from_felt(0x789abc);
+
+        let prize_pool: ContractInvoker<PrizePool> = contract.into();
+        prize_pool.constructor(admin, fee_setter);
+        
+        prize_pool.update_prize_pool(15_u256);
+
+        let new_prize = prize_pool.get_Pool();
+        assert_eq!(new_prize, 15_u256);
+    }
+
+    #[test_case]
     fn test_getters() {
         let contract_class: ContractClass = declare("PrizePool");
         let contract: PreparedContract = contract_class.deploy();

@@ -55,7 +55,7 @@ mod PrizePool {
 
     #[derive(Drop, starknet::Event)]
     pub struct PrizePoolUpdated {
-        pub prize: u32
+        pub prize: u256
     }
 
     #[derive(Drop, starknet::Event)]
@@ -128,6 +128,10 @@ mod PrizePool {
             self.emit(ReservesWithdrawn { amount, recipient });
         }
 
+        fn update_prize_pool(ref self: ContractState, prize: u256){
+            self.emit(PrizePoolUpdated {prize});
+        }
+    
         fn get_platform_fee(ref self: ContractState) -> u256 {
             self.platform_fee_percentage.read()
         }
